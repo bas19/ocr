@@ -63,8 +63,8 @@ class ReceiptController extends Controller
             // Parse receipt data
             $parsedData = $this->ocrService->parseReceiptData($rawText);
 
-            // Create receipt record
-            $receipt = Receipt::create([
+            // Prepare result data (without saving to database)
+            $result = [
                 'image_path' => $imagePath,
                 'transaction_date' => $parsedData['transaction_date'],
                 'invoice_number' => $parsedData['invoice_number'],
@@ -76,26 +76,17 @@ class ReceiptController extends Controller
                     'mime_type' => $request->file('image')->getMimeType(),
                 ],
                 'status' => 'processed',
-            ]);
+            ];
 
             return redirect()->route('receipts.page.upload')->with([
-                'receipt' => $receipt->toArray(),
-                'message' => 'Receipt processed successfully',
+                'receipt' => $result,
+                'message' => 'Receipt processed successfully (not saved to database)',
             ]);
         } catch (Exception $e) {
             Log::error('Receipt processing failed', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
-
-            // Store failed receipt record
-            if (isset($imagePath)) {
-                Receipt::create([
-                    'image_path' => $imagePath,
-                    'status' => 'failed',
-                    'error_message' => $e->getMessage(),
-                ]);
-            }
 
             return back()->withErrors([
                 'error' => $e->getMessage(),
