@@ -9,6 +9,7 @@
 /resources/js/wayfinder
 /storage/*.key
 /storage/pail
+/storage/app/google-credentials.json
 /vendor
 .env
 .env.backup
