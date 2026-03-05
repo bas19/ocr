@@ -69,6 +69,8 @@ class ReceiptController extends Controller
                 'transaction_date' => $parsedData['transaction_date'],
                 'invoice_number' => $parsedData['invoice_number'],
                 'supplier' => $parsedData['supplier'],
+                'total_amount' => $parsedData['total_amount'],
+                'description' => $parsedData['description'],
                 'raw_text' => $rawText,
                 'metadata' => [
                     'processed_at' => now()->toIso8601String(),

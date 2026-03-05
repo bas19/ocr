@@ -21,7 +21,7 @@ class ReceiptFactory extends Factory
         $totalAmount = $subtotal + $taxAmount;
 
         return [
-            'image_path' => 'receipts/' . fake()->uuid() . '.jpg',
+            'image_path' => 'receipts/'.fake()->uuid().'.jpg',
             'merchant_name' => fake()->company(),
             'total_amount' => $totalAmount,
             'tax_amount' => $taxAmount,

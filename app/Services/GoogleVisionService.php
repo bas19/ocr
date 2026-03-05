@@ -148,7 +148,7 @@ class GoogleVisionService implements OcrServiceInterface
      * Parse receipt data from raw OCR text.
      *
      * @param  string  $rawText  Raw OCR text
-     * @return array{transaction_date: ?string, invoice_number: ?string, supplier: ?string}
+     * @return array{transaction_date: ?string, invoice_number: ?string, supplier: ?string, total_amount: ?float, description: ?string}
      */
     public function parseReceiptData(string $rawText): array
     {
@@ -156,6 +156,8 @@ class GoogleVisionService implements OcrServiceInterface
             'transaction_date' => $this->extractDate($rawText),
             'invoice_number' => $this->extractInvoiceNumber($rawText),
             'supplier' => $this->extractSupplier($rawText),
+            'total_amount' => $this->extractTotalAmount($rawText),
+            'description' => $this->extractDescription($rawText),
         ];
     }
 
@@ -316,6 +318,90 @@ class GoogleVisionService implements OcrServiceInterface
                     return $invoiceNo;
                 }
             }
+        }
+
+        return null;
+    }
+
+    /**
+     * Extract total amount from receipt text.
+     */
+    protected function extractTotalAmount(string $text): ?float
+    {
+        // Common total patterns (ordered by specificity)
+        $patterns = [
+            '/\b(?:TOTAL|GRAND\s+TOTAL|AMOUNT\s+DUE)\s*[:.]?\s*\$?\s*(\d+[,.]?\d*\.?\d{2})\b/i',
+            '/\b(?:TOTAL|BALANCE)\s*[:.]?\s*(\d+[,.]?\d*\.?\d{2})\s*$/mi',
+            '/\bTOTAL\s*[:.]?\s*([A-Z]{3})?\s*\$?\s*(\d+[,.]?\d*\.?\d{2})\b/i',
+        ];
+
+        foreach ($patterns as $pattern) {
+            if (preg_match($pattern, $text, $matches)) {
+                // Get the last match (the amount)
+                $amount = end($matches);
+                $amount = str_replace(',', '', $amount);
+
+                if (is_numeric($amount)) {
+                    return (float) $amount;
+                }
+            }
+        }
+
+        // Fallback: find the largest amount in the text
+        if (preg_match_all('/\$?\s*(\d+[,.]?\d*\.?\d{2})\b/', $text, $matches)) {
+            $amounts = array_map(function ($amount) {
+                return (float) str_replace(',', '', $amount);
+            }, $matches[1]);
+
+            if (! empty($amounts)) {
+                return max($amounts);
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Extract description from receipt text.
+     */
+    protected function extractDescription(string $text): ?string
+    {
+        $lines = explode("\n", $text);
+        $descriptions = [];
+
+        // Look for item descriptions (lines that might be products/services)
+        foreach ($lines as $line) {
+            $line = trim($line);
+
+            // Skip empty lines, very short lines, and header/footer text
+            if (strlen($line) < 3 || strlen($line) > 100) {
+                continue;
+            }
+
+            // Skip lines that look like totals, dates, or addresses
+            if (preg_match('/^(?:TOTAL|SUBTOTAL|TAX|BALANCE|INVOICE|RECEIPT|NO\.|DATE)/i', $line)) {
+                continue;
+            }
+
+            // Skip lines that are just prices
+            if (preg_match('/^\$?\s*\d+[,.]?\d*\.?\d{2}$/', $line)) {
+                continue;
+            }
+
+            // Skip lines that look like dates or phone numbers
+            if (preg_match('/\d{2}[\/\-]\d{2}[\/\-]\d{2,4}|\d{3}[.\-]?\d{3}[.\-]?\d{4}/', $line)) {
+                continue;
+            }
+
+            // Lines with prices might be item descriptions
+            if (preg_match('/[A-Za-z]{3,}/', $line)) {
+                $descriptions[] = $line;
+            }
+        }
+
+        // Return first few items as description
+        if (! empty($descriptions)) {
+            return implode(' | ', array_slice($descriptions, 0, 5));
         }
 
         return null;

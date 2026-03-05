@@ -347,6 +347,43 @@ const clearForm = () => {
                                         </div>
                                     </div>
 
+                                    <!-- Total Amount -->
+                                    <div class="mb-4 pb-4 border-bottom">
+                                        <div class="d-flex align-items-start">
+                                            <div class="bg-warning bg-opacity-10 rounded-3 p-3 me-3">
+                                                <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24" class="text-warning">
+                                                    <path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                                                </svg>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <label class="text-muted small mb-1 d-block">Total Amount</label>
+                                                <div class="fs-3 fw-bold text-success" v-if="result.total_amount">
+                                                    ${{ parseFloat(result.total_amount).toFixed(2) }}
+                                                </div>
+                                                <div class="text-muted fst-italic" v-else>
+                                                    No total amount found
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Description -->
+                                    <div class="mb-4 pb-4 border-bottom" v-if="result.description">
+                                        <div class="d-flex align-items-start">
+                                            <div class="bg-purple bg-opacity-10 rounded-3 p-3 me-3" style="--bs-bg-opacity: 0.1; background-color: #6f42c1 !important;">
+                                                <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24" style="color: #6f42c1;">
+                                                    <path d="M4 6h16M4 10h16M4 14h16M4 18h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                                                </svg>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <label class="text-muted small mb-1 d-block">Description / Items</label>
+                                                <div class="text-dark">
+                                                    {{ result.description }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <!-- Raw Extracted Text -->
                                     <div v-if="result.raw_text">
                                         <div class="d-flex align-items-start">

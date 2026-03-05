@@ -14,6 +14,8 @@ class Receipt extends Model
         'image_path',
         'invoice_number',
         'supplier',
+        'description',
+        'total_amount',
         'transaction_date',
         'raw_text',
         'metadata',

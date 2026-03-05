@@ -150,6 +150,22 @@ const getStatusBadgeClass = (status) => {
                                 </div>
                             </div>
 
+                            <!-- Total -->
+                            <div class="mb-3">
+                                <label class="text-muted small d-block mb-1">Total</label>
+                                <div class="h5 fw-bold text-success mb-0">
+                                    {{ receipt.total_amount ? `$${parseFloat(receipt.total_amount).toFixed(2)}` : 'Not found' }}
+                                </div>
+                            </div>
+
+                            <!-- Description -->
+                            <div v-if="receipt.description" class="mb-3">
+                                <label class="text-muted small d-block mb-1">Description</label>
+                                <div class="text-muted small text-truncate">
+                                    {{ receipt.description }}
+                                </div>
+                            </div>
+
                             <!-- Actions -->
                             <div class="d-flex gap-2 pt-3 border-top">
                                 <button
@@ -249,6 +265,22 @@ const getStatusBadgeClass = (status) => {
                                     <label class="text-muted small d-block mb-1">Transaction Date</label>
                                     <div class="h5 fw-bold mb-0">
                                         {{ formatLongDate(selectedReceipt.transaction_date) }}
+                                    </div>
+                                </div>
+
+                                <!-- Total -->
+                                <div class="mt-3 pt-3 border-top">
+                                    <label class="text-muted small d-block mb-1">Total Amount</label>
+                                    <div class="h4 fw-bold text-success mb-0">
+                                        {{ selectedReceipt.total_amount ? `$${parseFloat(selectedReceipt.total_amount).toFixed(2)}` : 'Not found' }}
+                                    </div>
+                                </div>
+
+                                <!-- Description -->
+                                <div v-if="selectedReceipt.description" class="mt-3 pt-3 border-top">
+                                    <label class="text-muted small d-block mb-2">Description</label>
+                                    <div class="text-muted">
+                                        {{ selectedReceipt.description }}
                                     </div>
                                 </div>
                             </div>

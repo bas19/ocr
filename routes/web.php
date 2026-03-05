@@ -17,5 +17,3 @@ Route::prefix('api/receipts')->group(function () {
     Route::get('/{receipt}', [ReceiptController::class, 'show'])->name('receipts.show');
     Route::delete('/{receipt}', [ReceiptController::class, 'destroy'])->name('receipts.destroy');
 });
-
-
