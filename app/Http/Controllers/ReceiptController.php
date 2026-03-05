@@ -173,10 +173,10 @@ class ReceiptController extends Controller
      */
     public function store(StoreReceiptRequest $request): Response
     {
-        return redirect()->route('receipts.page.upload')->with([
-            'test' => true,
-            'message' => 'Receipt processed successfully!',
-        ]);
+        // return redirect()->route('receipts.page.upload')->with([
+        //     'test' => true,
+        //     'message' => 'Receipt processed successfully!',
+        // ]);
 
         try {
             // Store the uploaded image
