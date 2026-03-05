@@ -24,18 +24,36 @@ class GoogleVisionService implements OcrServiceInterface
     public function __construct()
     {
         try {
-            // Initialize the client
-            // Make sure to set GOOGLE_APPLICATION_CREDENTIALS environment variable
-            // or pass keyFilePath in config
             $config = [];
 
-            if ($keyPath = config('services.google_vision.key_file')) {
+            // Priority 1: Use JSON credentials from environment variable (for production)
+            if ($credentialsJson = config('services.google_vision.credentials_json')) {
+                $credentials = json_decode($credentialsJson, true);
+
+                if (json_last_error() !== JSON_ERROR_NONE) {
+                    throw new Exception('Invalid JSON in GOOGLE_CREDENTIALS_JSON: '.json_last_error_msg());
+                }
+
+                $config['credentials'] = $credentials;
+                Log::info('Using Google Vision credentials from JSON environment variable');
+            }
+            // Priority 2: Use credentials file path (for local development)
+            elseif ($keyPath = config('services.google_vision.key_file')) {
                 // Resolve relative paths from the application base path
                 if (! str_starts_with($keyPath, '/')) {
                     $keyPath = base_path($keyPath);
                 }
 
+                if (! file_exists($keyPath)) {
+                    throw new Exception("Credentials file not found at: {$keyPath}");
+                }
+
                 $config['credentials'] = $keyPath;
+                Log::info('Using Google Vision credentials from file', ['path' => $keyPath]);
+            }
+            // No credentials configured
+            else {
+                throw new Exception('No Google Vision credentials configured. Set either GOOGLE_CREDENTIALS_JSON or GOOGLE_APPLICATION_CREDENTIALS in .env');
             }
 
             $this->client = new ImageAnnotatorClient($config);

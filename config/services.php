@@ -36,6 +36,7 @@ return [
     ],
 
     'google_vision' => [
+        'credentials_json' => env('GOOGLE_CREDENTIALS_JSON'),
         'key_file' => env('GOOGLE_APPLICATION_CREDENTIALS'),
     ],
 
