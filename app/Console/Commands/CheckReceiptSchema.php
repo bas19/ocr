@@ -83,11 +83,11 @@ class CheckReceiptSchema extends Command
             $this->newLine();
             $this->info('📝 Most recent receipt:');
             $this->line("   ID: {$recentReceipt->id}");
-            $this->line("   Invoice: ".($recentReceipt->invoice_number ?? 'null'));
-            $this->line("   Supplier: ".($recentReceipt->supplier ?? 'null'));
-            $this->line("   Total: ".($recentReceipt->total_amount ?? 'null'));
-            $this->line("   Description: ".($recentReceipt->description ?? 'null'));
-            $this->line("   Date: ".($recentReceipt->transaction_date ?? 'null'));
+            $this->line('   Invoice: '.($recentReceipt->invoice_number ?? 'null'));
+            $this->line('   Supplier: '.($recentReceipt->supplier ?? 'null'));
+            $this->line('   Total: '.($recentReceipt->total_amount ?? 'null'));
+            $this->line('   Description: '.($recentReceipt->description ?? 'null'));
+            $this->line('   Date: '.($recentReceipt->transaction_date ?? 'null'));
         }
 
         $this->newLine();

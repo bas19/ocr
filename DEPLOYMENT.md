@@ -58,28 +58,38 @@ Deploy your application. The service will automatically use the JSON credentials
 
 After deployment, check your logs:
 
+### Verification
+
+After deployment, check your logs for:
 ```bash
-# You should see this in logs:
-# "Using Google Vision credentials from JSON environment variable"
+# You should see this:
+"Using Google Vision credentials from JSON environment variable"
+```
+
+**Run diagnostic:**
+```bash
+php artisan credentials:diagnose
 ```
 
 ### Troubleshooting
 
-**Error: "Invalid JSON in GOOGLE_CREDENTIALS_JSON"**
+📖 **Complete troubleshooting guide:** [TROUBLESHOOTING_CREDENTIALS.md](TROUBLESHOOTING_CREDENTIALS.md)
 
-- Make sure the JSON is properly escaped
-- Use single quotes when setting the variable in terminal
-- Verify no newlines or special characters broke the JSON
+**Quick reference:**
 
-**Error: "No Google Vision credentials configured"**
+**Error: "OpenSSL unable to validate key"**  
+→ Malformed JSON credentials. Run `./deploy-to-cloud.sh` and repaste.
 
-- Ensure `GOOGLE_CREDENTIALS_JSON` is set in production
-- Check the variable name is exactly: `GOOGLE_CREDENTIALS_JSON`
+**Error: "Invalid JSON in GOOGLE_CREDENTIALS_JSON: Syntax error"**  
+→ Same fix - regenerate with deployment script and repaste properly.
 
-**Error: "Credentials file not found"**
+**Error: "Credentials file not found at: /var/www/html/..."**  
+→ Remove `GOOGLE_APPLICATION_CREDENTIALS` (file paths don't work in cloud).  
+→ Use `GOOGLE_CREDENTIALS_JSON` instead.
 
-- This happens when using `GOOGLE_APPLICATION_CREDENTIALS` with a file path
-- For production, use `GOOGLE_CREDENTIALS_JSON` instead
+**Error: "No Google Vision credentials configured"**  
+→ Set `GOOGLE_CREDENTIALS_JSON` in environment variables.  
+→ Make sure you removed `GOOGLE_APPLICATION_CREDENTIALS`.
 
 ## Other Platforms
 

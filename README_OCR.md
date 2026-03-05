@@ -151,7 +151,43 @@ Since this application uses Google Cloud Vision API:
 
 ## Troubleshooting
 
-### "Could not find keyfile"
+### 🔍 Diagnostic Tool
+
+Run the automated diagnostic:
+```bash
+php artisan credentials:diagnose
+```
+
+This checks your Google Cloud Vision configuration and identifies issues.
+
+### Common Errors
+
+#### "OpenSSL unable to validate key"
+
+❌ **Problem:** Malformed private key in `GOOGLE_CREDENTIALS_JSON`
+
+✅ **Quick Fix:**
+1. Run `./deploy-to-cloud.sh` to regenerate valid JSON
+2. In Laravel Cloud, delete current `GOOGLE_CREDENTIALS_JSON` value
+3. Paste new value (no extra quotes)
+4. Redeploy
+
+📖 **Full guide:** [TROUBLESHOOTING_CREDENTIALS.md](TROUBLESHOOTING_CREDENTIALS.md#-error-openssl-unable-to-validate-key)
+
+#### "Invalid JSON in GOOGLE_CREDENTIALS_JSON: Syntax error"
+
+Same fix as above - regenerate and repaste properly formatted JSON.
+
+#### "Credentials file not found at: /var/www/html/..."
+
+❌ Using `GOOGLE_APPLICATION_CREDENTIALS` in production  
+✅ Remove it and use `GOOGLE_CREDENTIALS_JSON` instead
+
+See: [TROUBLESHOOTING_CREDENTIALS.md](TROUBLESHOOTING_CREDENTIALS.md)
+
+### Other Issues
+
+#### "Could not find keyfile"
 
 Make sure:
 
@@ -159,7 +195,7 @@ Make sure:
 - The path is relative to the Laravel root or use an absolute path
 - File has proper read permissions
 
-### "Class 'Google\Cloud\Vision\V1\Client\ImageAnnotatorClient' not found"
+#### "Class 'Google\Cloud\Vision\V1\Client\ImageAnnotatorClient' not found"
 
 Run:
 
@@ -168,7 +204,7 @@ composer update
 composer dump-autoload
 ```
 
-### Poor Extraction Accuracy
+#### Poor Extraction Accuracy
 
 Google Cloud Vision is highly accurate, but you can improve results by:
 

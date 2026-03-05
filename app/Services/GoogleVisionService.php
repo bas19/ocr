@@ -328,11 +328,11 @@ class GoogleVisionService implements OcrServiceInterface
      */
     protected function extractTotalAmount(string $text): ?float
     {
-        // Common total patterns (ordered by specificity)
+        // Common total patterns (ordered by specificity) - exclude SUBTOTAL
         $patterns = [
-            '/\b(?:TOTAL|GRAND\s+TOTAL|AMOUNT\s+DUE)\s*[:.]?\s*\$?\s*(\d+[,.]?\d*\.?\d{2})\b/i',
-            '/\b(?:TOTAL|BALANCE)\s*[:.]?\s*(\d+[,.]?\d*\.?\d{2})\s*$/mi',
-            '/\bTOTAL\s*[:.]?\s*([A-Z]{3})?\s*\$?\s*(\d+[,.]?\d*\.?\d{2})\b/i',
+            '/\b(?:GRAND\s+TOTAL|AMOUNT\s+DUE)\s*[:.]?\s*\$?\s*(\d+[,.]?\d*\.?\d{2})\b/i',
+            '/\b(?<!SUB\s)(?<!SUB)TOTAL\s*[:.]?\s*\$?\s*(\d+[,.]?\d*\.?\d{2})\b/i',
+            '/\bBALANCE\s*[:.]?\s*\$?\s*(\d+[,.]?\d*\.?\d{2})\s*$/mi',
         ];
 
         foreach ($patterns as $pattern) {
