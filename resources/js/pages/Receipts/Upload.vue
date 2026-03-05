@@ -74,13 +74,6 @@ watch(() => props.receiptId, (newReceiptId, oldReceiptId) => {
     }
 }, { immediate: true });
 
-// Watch for success message in flash
-watch(() => page.props.flash?.message, (message) => {
-    if (message) {
-        successMessage.value = message;
-    }
-}, { immediate: true });
-
 // Watch all page props for debugging
 watch(() => page.props, (newProps) => {
     console.log('=== Page Props Changed ===');

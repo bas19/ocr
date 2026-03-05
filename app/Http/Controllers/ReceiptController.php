@@ -22,13 +22,8 @@ class ReceiptController extends Controller
      */
     public function uploadPage(): InertiaResponse
     {
-        // Get receipt ID from query string (more reliable than session flash)
+        // Get receipt ID from query string only (no session usage to avoid cookie size limits)
         $receiptId = request()->query('receipt');
-
-        // Also check session as fallback
-        if (! $receiptId) {
-            $receiptId = session('receipt_id');
-        }
 
         return Inertia::render('Receipts/Upload', [
             'receiptId' => $receiptId,
@@ -90,10 +85,9 @@ class ReceiptController extends Controller
                 'status' => 'processed',
             ]);
 
-            // Redirect with receipt ID as query parameter (more reliable than session)
-            return redirect()
-                ->route('receipts.page.upload', ['receipt' => $receipt->id])
-                ->with('message', 'Receipt processed successfully!');
+            // Redirect with receipt ID as query parameter only (no session data)
+            // This avoids cookie size limits on cloud hosting
+            return redirect()->route('receipts.page.upload', ['receipt' => $receipt->id]);
         } catch (Exception $e) {
             Log::error('Receipt processing failed', [
                 'error' => $e->getMessage(),
