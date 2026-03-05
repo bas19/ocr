@@ -103,6 +103,15 @@ class ReceiptController extends Controller
                 'trace' => $e->getTraceAsString(),
             ]);
 
+            // For AJAX/API requests, return JSON error
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to process receipt: '.$e->getMessage(),
+                ], 500);
+            }
+
+            // Fallback for non-AJAX requests
             return back()->withErrors([
                 'error' => $e->getMessage(),
             ]);
