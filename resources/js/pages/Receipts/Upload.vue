@@ -145,6 +145,17 @@ const submitForm = async () => {
     submissionError.value = null; // Clear previous errors
 
     try {
+        // Get CSRF token
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        console.log('CSRF Token:', csrfToken ? 'Found' : 'Missing');
+
+        if (!csrfToken) {
+            console.error('CSRF token not found in meta tag');
+            submissionError.value = 'Security token missing. Please refresh the page.';
+            isSubmitting.value = false;
+            return;
+        }
+
         // Create FormData for file upload
         const formData = new FormData();
         formData.append('image', form.image);
@@ -158,9 +169,11 @@ const submitForm = async () => {
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
                 'Accept': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                'X-CSRF-TOKEN': csrfToken,
             },
         });
+
+        console.log('Response status:', response.status);
 
         const data = await response.json();
         console.log('=== Response Data ===', data);
@@ -178,6 +191,10 @@ const submitForm = async () => {
                 preserveState: false,
                 preserveScroll: false,
             });
+        } else if (response.status === 419) {
+            // CSRF token mismatch
+            console.error('CSRF token mismatch');
+            submissionError.value = 'Session expired. Please refresh the page and try again.';
         } else if (data.errors) {
             console.error('Validation errors:', data.errors);
             // Display first validation error
