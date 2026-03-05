@@ -19,15 +19,19 @@ const successMessage = ref(props.message || null);
 
 const errors = computed(() => page.props.errors || {});
 
-// Watch for flash data changes from Inertia
-watch(() => page.props.flash, (flash) => {
-    if (flash?.receipt) {
-        result.value = flash.receipt;
+// Watch for props changes (when receipt is loaded after upload)
+watch(() => props.receipt, (newReceipt) => {
+    if (newReceipt) {
+        result.value = newReceipt;
     }
-    if (flash?.message) {
-        successMessage.value = flash.message;
+}, { immediate: true });
+
+// Watch for success message in flash
+watch(() => page.props.flash?.message, (message) => {
+    if (message) {
+        successMessage.value = message;
     }
-}, { deep: true, immediate: true });
+}, { immediate: true });
 
 const handleFileChange = (event) => {
     const file = event.target.files?.[0];
@@ -75,17 +79,8 @@ const submitForm = () => {
         preserveScroll: true,
         forceFormData: true, // Ensure multipart/form-data for file upload
         onSuccess: () => {
-            console.log('Form submitted successfully');
-            console.log('Flash data:', page.props.flash);
-            // Data comes from flash data shared by middleware
-            const flash = page.props.flash;
-            if (flash?.receipt) {
-                result.value = flash.receipt;
-                console.log('Receipt data:', flash.receipt);
-            }
-            if (flash?.message) {
-                successMessage.value = flash.message;
-            }
+            // Receipt data will come through props after redirect
+            console.log('Receipt uploaded successfully');
         },
         onError: (errors) => {
             console.error('Form submission errors:', errors);

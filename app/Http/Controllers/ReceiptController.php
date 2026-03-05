@@ -22,7 +22,15 @@ class ReceiptController extends Controller
      */
     public function uploadPage(): InertiaResponse
     {
-        return Inertia::render('Receipts/Upload');
+        // If there's a receipt_id in the session, load the receipt
+        $receipt = null;
+        if ($receiptId = session('receipt_id')) {
+            $receipt = Receipt::find($receiptId);
+        }
+
+        return Inertia::render('Receipts/Upload', [
+            'receipt' => $receipt,
+        ]);
     }
 
     /**
@@ -63,8 +71,8 @@ class ReceiptController extends Controller
             // Parse receipt data
             $parsedData = $this->ocrService->parseReceiptData($rawText);
 
-            // Prepare result data (without saving to database)
-            $result = [
+            // Save receipt to database
+            $receipt = Receipt::create([
                 'image_path' => $imagePath,
                 'transaction_date' => $parsedData['transaction_date'],
                 'invoice_number' => $parsedData['invoice_number'],
@@ -78,11 +86,12 @@ class ReceiptController extends Controller
                     'mime_type' => $request->file('image')->getMimeType(),
                 ],
                 'status' => 'processed',
-            ];
+            ]);
 
+            // Redirect with success message and receipt ID (not the full data)
             return redirect()->route('receipts.page.upload')->with([
-                'receipt' => $result,
-                'message' => 'Receipt processed successfully (not saved to database)',
+                'receipt_id' => $receipt->id,
+                'message' => 'Receipt processed successfully!',
             ]);
         } catch (Exception $e) {
             Log::error('Receipt processing failed', [
