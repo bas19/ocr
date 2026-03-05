@@ -1,5 +1,5 @@
 <script setup>
-import { Head, useForm, usePage } from '@inertiajs/vue3';
+import { Head, useForm, usePage, router } from '@inertiajs/vue3';
 import { ref, computed, watch } from 'vue';
 
 const props = defineProps({
@@ -19,6 +19,8 @@ const previewUrl = ref(null);
 const result = ref(null);
 const successMessage = ref(null);
 const isLoadingReceipt = ref(false);
+const isSubmitting = ref(false);
+const submissionError = ref(null);
 
 const errors = computed(() => page.props.errors || {});
 
@@ -108,6 +110,7 @@ const handleFileChange = (event) => {
 
         result.value = null;
         successMessage.value = null;
+        submissionError.value = null;
     }
 };
 
@@ -126,6 +129,7 @@ const handleDrop = (event) => {
 
         result.value = null;
         successMessage.value = null;
+        submissionError.value = null;
     }
 };
 
@@ -133,30 +137,64 @@ const handleDragOver = (event) => {
     event.preventDefault();
 };
 
-const submitForm = () => {
-    if (!form.image) return;
+const submitForm = async () => {
+    if (!form.image || isSubmitting.value) return;
 
     console.log('=== Submitting Form ===');
+    isSubmitting.value = true;
+    submissionError.value = null; // Clear previous errors
 
-    form.post('/receipts', {
-        preserveScroll: true,
-        forceFormData: true, // Ensure multipart/form-data for file upload
-        onSuccess: (page) => {
-            console.log('=== Form Submission Success ===');
-            console.log('Response page:', page);
+    try {
+        // Create FormData for file upload
+        const formData = new FormData();
+        formData.append('image', form.image);
 
-            // Clear the preview to show the results section
+        console.log('Posting to /receipts with FormData');
+
+        // Use fetch to avoid Inertia's redirect handling and session cookies
+        const response = await fetch('/receipts', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+            },
+        });
+
+        const data = await response.json();
+        console.log('=== Response Data ===', data);
+
+        if (response.ok && data.success && data.receipt_id) {
+            console.log('Receipt uploaded successfully, navigating with ID:', data.receipt_id);
+
+            // Clear the preview and form
             previewUrl.value = null;
             form.reset();
 
-            // Receipt data will be fetched via API after redirect
-            console.log('Receipt uploaded successfully, preview cleared');
-        },
-        onError: (errors) => {
-            console.error('=== Form Submission Errors ===');
-            console.error('Errors:', errors);
-        },
-    });
+            // Navigate to upload page with receipt ID as query parameter
+            // This avoids storing data in session/cookies
+            router.visit(`/receipts/upload?receipt=${data.receipt_id}`, {
+                preserveState: false,
+                preserveScroll: false,
+            });
+        } else if (data.errors) {
+            console.error('Validation errors:', data.errors);
+            // Display first validation error
+            const firstError = Object.values(data.errors)[0];
+            submissionError.value = Array.isArray(firstError) ? firstError[0] : firstError;
+        } else if (data.message) {
+            submissionError.value = data.message;
+        } else {
+            submissionError.value = 'An error occurred while processing the receipt.';
+        }
+    } catch (error) {
+        console.error('=== Submission Error ===');
+        console.error('Error:', error);
+        submissionError.value = 'Failed to upload receipt. Please try again.';
+    } finally {
+        isSubmitting.value = false;
+    }
 };
 
 const clearForm = () => {
@@ -165,6 +203,7 @@ const clearForm = () => {
     previewUrl.value = null;
     result.value = null;
     successMessage.value = null;
+    submissionError.value = null;
     console.log('Form cleared');
 };
 </script>
@@ -257,7 +296,7 @@ const clearForm = () => {
                                     />
                                     <button
                                         @click="clearForm"
-                                        :disabled="form.processing"
+                                        :disabled="isSubmitting"
                                         class="btn btn-sm btn-light position-absolute top-0 end-0 m-2 shadow-sm"
                                         style="border-radius: 50%; width: 36px; height: 36px; padding: 0;"
                                     >
@@ -269,10 +308,10 @@ const clearForm = () => {
 
                                 <button
                                     @click="submitForm"
-                                    :disabled="form.processing"
+                                    :disabled="isSubmitting"
                                     class="btn btn-primary btn-lg w-100 shadow-sm"
                                 >
-                                    <span v-if="form.processing">
+                                    <span v-if="isSubmitting">
                                         <span class="spinner-border spinner-border-sm me-2" role="status"></span>
                                         Processing Receipt...
                                     </span>
@@ -298,6 +337,13 @@ const clearForm = () => {
                                     <path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
                                 </svg>
                                 {{ form.errors.image }}
+                            </div>
+
+                            <div v-if="submissionError" class="alert alert-danger border-0 shadow-sm mt-3 d-flex align-items-center" role="alert">
+                                <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24" class="me-2">
+                                    <path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                                </svg>
+                                {{ submissionError }}
                             </div>
 
                             <div v-if="errors.error" class="alert alert-danger border-0 shadow-sm mt-3 d-flex align-items-center" role="alert">

@@ -85,8 +85,17 @@ class ReceiptController extends Controller
                 'status' => 'processed',
             ]);
 
-            // Redirect with receipt ID as query parameter only (no session data)
-            // This avoids cookie size limits on cloud hosting
+            // For AJAX/fetch requests, return JSON to avoid session cookie issues
+            // Frontend will handle navigation with query parameter
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'receipt_id' => $receipt->id,
+                    'message' => 'Receipt processed successfully!',
+                ]);
+            }
+
+            // Fallback for non-AJAX requests (direct form submission)
             return redirect()->route('receipts.page.upload', ['receipt' => $receipt->id]);
         } catch (Exception $e) {
             Log::error('Receipt processing failed', [
