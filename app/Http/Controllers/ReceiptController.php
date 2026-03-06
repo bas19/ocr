@@ -22,12 +22,7 @@ class ReceiptController extends Controller
      */
     public function uploadPage(): InertiaResponse
     {
-        // Get receipt ID from query string only (no session usage to avoid cookie size limits)
-        $receiptId = request()->query('receipt');
-
-        return Inertia::render('Receipts/Upload', [
-            'receiptId' => $receiptId,
-        ]);
+        return Inertia::render('Receipts/Upload');
     }
 
     /**
@@ -58,7 +53,7 @@ class ReceiptController extends Controller
     public function store(StoreReceiptRequest $request): Response
     {
         try {
-            // Store the uploaded image
+            // Store the uploaded image temporarily
             $imagePath = $request->file('image')->store('receipts', 'public');
             $fullPath = Storage::disk('public')->path($imagePath);
 
@@ -68,35 +63,29 @@ class ReceiptController extends Controller
             // Parse receipt data
             $parsedData = $this->ocrService->parseReceiptData($rawText);
 
-            // Save receipt to database
-            $receipt = Receipt::create([
-                'image_path' => $imagePath,
-                'transaction_date' => $parsedData['transaction_date'],
-                'invoice_number' => $parsedData['invoice_number'],
-                'supplier' => $parsedData['supplier'],
-                'total_amount' => $parsedData['total_amount'],
-                'description' => $parsedData['description'],
-                'raw_text' => $rawText,
-                'metadata' => [
-                    'processed_at' => now()->toIso8601String(),
-                    'file_size' => $request->file('image')->getSize(),
-                    'mime_type' => $request->file('image')->getMimeType(),
+            // Delete the temporary image file
+            Storage::disk('public')->delete($imagePath);
+
+            // Return extracted data directly (no database saving)
+            $responseData = [
+                'success' => true,
+                'message' => 'Receipt processed successfully!',
+                'data' => [
+                    'transaction_date' => $parsedData['transaction_date'],
+                    'invoice_number' => $parsedData['invoice_number'],
+                    'supplier' => $parsedData['supplier'],
+                    'total_amount' => $parsedData['total_amount'],
+                    'description' => $parsedData['description'],
+                    'raw_text' => $rawText,
+                    'metadata' => [
+                        'processed_at' => now()->toIso8601String(),
+                        'file_size' => $request->file('image')->getSize(),
+                        'mime_type' => $request->file('image')->getMimeType(),
+                    ],
                 ],
-                'status' => 'processed',
-            ]);
+            ];
 
-            // For AJAX/fetch requests, return JSON to avoid session cookie issues
-            // Frontend will handle navigation with query parameter
-            if ($request->wantsJson() || $request->ajax()) {
-                return response()->json([
-                    'success' => true,
-                    'receipt_id' => $receipt->id,
-                    'message' => 'Receipt processed successfully!',
-                ]);
-            }
-
-            // Fallback for non-AJAX requests (direct form submission)
-            return redirect()->route('receipts.page.upload', ['receipt' => $receipt->id]);
+            return response()->json($responseData);
         } catch (Exception $e) {
             Log::error('Receipt processing failed', [
                 'error' => $e->getMessage(),

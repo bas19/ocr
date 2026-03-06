@@ -1,13 +1,6 @@
 <script setup>
-import { Head, useForm, usePage, router } from '@inertiajs/vue3';
-import { ref, computed, watch } from 'vue';
-
-const props = defineProps({
-    receiptId: [Number, String],
-});
-
-console.log('=== Upload Component Initialized ===');
-console.log('Props receiptId:', props.receiptId);
+import { Head, useForm, usePage } from '@inertiajs/vue3';
+import { ref, computed } from 'vue';
 
 const page = usePage();
 
@@ -18,83 +11,10 @@ const form = useForm({
 const previewUrl = ref(null);
 const result = ref(null);
 const successMessage = ref(null);
-const isLoadingReceipt = ref(false);
 const isSubmitting = ref(false);
 const submissionError = ref(null);
 
 const errors = computed(() => page.props.errors || {});
-
-// Fetch receipt data from API using native fetch
-const fetchReceipt = async (receiptId) => {
-    if (!receiptId) {
-        console.log('No receiptId provided');
-        return;
-    }
-
-    console.log('=== Fetching Receipt ===');
-    console.log('Receipt ID:', receiptId);
-
-    isLoadingReceipt.value = true;
-    try {
-        const url = `/api/receipts/${receiptId}`;
-        console.log('Fetching from:', url);
-
-        const response = await fetch(url, {
-            headers: {
-                'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        console.log('Receipt data received:', data);
-
-        result.value = data;
-        successMessage.value = 'Receipt processed successfully!';
-        console.log('Result set to:', result.value);
-    } catch (error) {
-        console.error('Failed to fetch receipt:', error);
-        console.error('Error message:', error.message);
-    } finally {
-        isLoadingReceipt.value = false;
-        console.log('Loading complete');
-    }
-};
-
-// Watch for receiptId changes (when receipt is processed)
-watch(() => props.receiptId, (newReceiptId, oldReceiptId) => {
-    console.log('=== ReceiptId Changed ===');
-    console.log('Old receiptId:', oldReceiptId);
-    console.log('New receiptId:', newReceiptId);
-
-    if (newReceiptId) {
-        fetchReceipt(newReceiptId);
-    }
-}, { immediate: true });
-
-// Watch all page props for debugging
-watch(() => page.props, (newProps) => {
-    console.log('=== Page Props Changed ===');
-    console.log('All props:', newProps);
-}, { deep: true });
-
-// Watch result changes
-watch(result, (newResult, oldResult) => {
-    console.log('=== Result Changed ===');
-    console.log('Old result:', oldResult);
-    console.log('New result:', newResult);
-    console.log('Result is truthy:', !!newResult);
-}, { deep: true });
-
-// Watch loading state changes
-watch(isLoadingReceipt, (newValue, oldValue) => {
-    console.log('=== isLoadingReceipt Changed ===');
-    console.log('Old:', oldValue, '-> New:', newValue);
-});
 
 const handleFileChange = (event) => {
     const file = event.target.files?.[0];
@@ -142,7 +62,8 @@ const submitForm = async () => {
 
     console.log('=== Submitting Form ===');
     isSubmitting.value = true;
-    submissionError.value = null; // Clear previous errors
+    submissionError.value = null;
+    result.value = null;
 
     try {
         // Create FormData for file upload
@@ -151,7 +72,7 @@ const submitForm = async () => {
 
         console.log('Posting to /api/receipts with FormData');
 
-        // Use API endpoint (stateless, no session cookies)
+        // Use API endpoint to process receipt
         const response = await fetch('/api/receipts', {
             method: 'POST',
             body: formData,
@@ -163,29 +84,26 @@ const submitForm = async () => {
 
         console.log('Response status:', response.status);
 
-        const data = await response.json();
-        console.log('=== Response Data ===', data);
+        const responseData = await response.json();
+        console.log('=== Response Data ===', responseData);
 
-        if (response.ok && data.success && data.receipt_id) {
-            console.log('Receipt uploaded successfully, navigating with ID:', data.receipt_id);
+        if (response.ok && responseData.success && responseData.data) {
+            console.log('Receipt processed successfully');
+
+            // Display the extracted data directly
+            result.value = responseData.data;
+            successMessage.value = responseData.message || 'Receipt processed successfully!';
 
             // Clear the preview and form
             previewUrl.value = null;
             form.reset();
-
-            // Navigate to upload page with receipt ID as query parameter
-            // This avoids storing data in session/cookies
-            router.visit(`/receipts/upload?receipt=${data.receipt_id}`, {
-                preserveState: false,
-                preserveScroll: false,
-            });
-        } else if (data.errors) {
-            console.error('Validation errors:', data.errors);
+        } else if (responseData.errors) {
+            console.error('Validation errors:', responseData.errors);
             // Display first validation error
-            const firstError = Object.values(data.errors)[0];
+            const firstError = Object.values(responseData.errors)[0];
             submissionError.value = Array.isArray(firstError) ? firstError[0] : firstError;
-        } else if (data.message) {
-            submissionError.value = data.message;
+        } else if (responseData.message) {
+            submissionError.value = responseData.message;
         } else {
             submissionError.value = 'An error occurred while processing the receipt.';
         }
@@ -370,29 +288,8 @@ const clearForm = () => {
                                 <h2 class="h5 mb-0 fw-bold">Extracted Data</h2>
                             </div>
 
-                            <!-- Debug Info (remove in production) -->
-                            <div class="alert alert-info small mt-3" style="font-family: monospace;">
-                                <strong>Debug Info:</strong><br>
-                                receiptId: {{ receiptId }}<br>
-                                isLoadingReceipt: {{ isLoadingReceipt }}<br>
-                                result exists: {{ !!result }}<br>
-                                result.id: {{ result?.id }}<br>
-                                result.invoice_number: {{ result?.invoice_number }}
-                            </div>
-
-                            <!-- Loading State -->
-                            <div v-if="isLoadingReceipt" class="text-center py-5">
-                                <div class="mb-4">
-                                    <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
-                                        <span class="visually-hidden">Loading...</span>
-                                    </div>
-                                </div>
-                                <h5 class="text-muted fw-normal">Loading receipt data...</h5>
-                                <p class="text-muted small mb-0">Please wait while we fetch your receipt details</p>
-                            </div>
-
                             <!-- Empty State -->
-                            <div v-else-if="!result" class="text-center py-5">
+                            <div v-if="!result" class="text-center py-5">
                                 <div class="mb-4">
                                     <svg
                                         width="100"
